@@ -144,9 +144,11 @@ public class GUImain_noImgReplaced extends JFrame {
 		// startMatchingJB 클릭시 실행됨.
 		// 이미지 비교 시작
 		/** 경로 참고 */
-		/** */
+		/** 문제점 : 경로를 어떻게 넣어 주는가, 사진 이름을 바꾸지 않고 어떻게 불러 오는가가 문제.*/
 		int result = ImageMatching.ifCompareFeature(imgPath, path1);
 		
+		/**
+		 * 이미지가 같으면 1 반환, 이미지가 다르면 2를 반환한다. */
 		if(result == 1) {
 			// 이미지가 같으면 -> 리스트에 파일 명 올린다.
 			fileName[count] = path1.toString();	/** */
