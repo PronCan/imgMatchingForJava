@@ -9,22 +9,12 @@ import javax.swing.*;
 
 public class GUImain_noImgReplaced extends JFrame {
 
-	/**
-	 * 1. 리스트 내용추가
-	 * 2. 시간초 label로 띄우기
-	 * 3. 저장 / 불러오기 다시 확인
-	 * 4. 
-	 */
+	String imgPath = "";	// textfield 저장 값
 	
-	int MAX_COUNT = 100;
+	StringBuffer insertPath = new StringBuffer("");
 
-	// 테스트 이미지 경로
-	String path1 = "D:\\img\\tree1.png";
-	String path2 = "D:\\img\\tree2.png";
-
-	String imgPath = "";
-
-	String[] fileName = new String[MAX_COUNT]; // 파일 이름 저장할 수 있는 변수(list)
+	String[] filePath = new String[] { "", }; // 파일 경로 저장할 수 있는 변수
+	String[] fileName = new String[] { "", }; // 파일 이름 저장할 수 있는 변수
 	int count = 0; // fileName count
 
 	Container pane = getContentPane();
@@ -32,12 +22,12 @@ public class GUImain_noImgReplaced extends JFrame {
 	JPanel insertImgJP = new JPanel(); // 이미지 path
 	JTextField imgPathJT = new JTextField(200); // 파일 경로 입력
 	JButton startMatchingJB = new JButton("start"); // 이미지 비교 시작
-
-	JPanel listJP = new JPanel(); // 중복 파일명 보여주기
-	JList listJL = new JList(new DefaultListModel()); // 리스트 컴포넌트 생성
 	
-	JScrollPane scrollPaneJS = new JScrollPane(listJL);
-
+	JPanel listJP = new JPanel(); // 중복 파일명 보여주기
+	//JList listJL = new JList(new DefaultListModel()); // 리스트 컴포넌트 생성
+	JTextArea listJT = new JTextArea();
+	JScrollPane scrollPaneJS = new JScrollPane(listJT);
+	
 	JPanel buttonJP = new JPanel(); // 버튼 : 전체삭제, 삭제, 저장, 불러오기
 	JButton clearJB = new JButton("Clear"); // 전체 삭제
 	JButton removeJB = new JButton("Delete"); // 선택된 하나 지우기
@@ -53,8 +43,15 @@ public class GUImain_noImgReplaced extends JFrame {
 	JLabel failLoadJL = new JLabel("불러올 데이터가 없습니다");
 	JButton failLoadJB = new JButton("확인");
 
-	GUImain_noImgReplaced() {
+	JDialog pathErrorJD = new JDialog(new Frame(), true);
+	JLabel pathErrorJL = new JLabel("경로가 비어 있습니다.");
+	JButton pathErrorJB = new JButton("확인");
 
+	JDialog errorJD = new JDialog(new Frame(), true);
+	JLabel errorJL = new JLabel("검사 결과에 문제가 있습니다.");
+	JButton errorJB = new JButton("확인");
+
+	GUImain_noImgReplaced() {
 		setting();
 		addDialog();
 	}
@@ -62,19 +59,32 @@ public class GUImain_noImgReplaced extends JFrame {
 	class MyActionListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			if (e.getSource() == startMatchingJB) {
-				progressJD.setVisible(true); /** */
-				timeCounter();
-				int i = 0;
-				while (fileName[i] != null) {
-					runImageMatching();
-					i++;
+				// /** 타임카운터 JLabel에 넣고 출력.
+				// *
+				// * */
+				// int i = 0;
+				// while (fileName[i] != null) {
+				// runImageMatching();
+				// i++;
+				// }
+
+				/** 임시 코드 */
+				try {
+					if (imgPathJT.getText() != null) {
+						imgPath = imgPathJT.getText();
+					} else {
+						// 이미지 경로가 비어있다.
+						pathErrorJD.setVisible(true);
+					}
+				} catch (Exception exception) {
+					System.out.println("imgPathJT is NULL");
 				}
-				finishProgressJB.setVisible(true);
+				ReadDirFileList(imgPath);
+
+				progressJD.setVisible(true);
 			}
 			if (e.getSource() == clearJB)
 				clear();
-			if (e.getSource() == removeJB)
-				remove();
 			if (e.getSource() == saveJB)
 				save();
 			if (e.getSource() == loadJB)
@@ -83,8 +93,14 @@ public class GUImain_noImgReplaced extends JFrame {
 				failLoadJD.setVisible(false);
 			if (e.getSource() == finishProgressJB)
 				progressJD.setVisible(false);
-			if (e.getSource() == cancleProgressJB)
+			if (e.getSource() == cancleProgressJB) {
 				progressJD.setVisible(false);
+				System.out.println("ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ");
+			}
+			if (e.getSource() == errorJB)
+				errorJD.setVisible(false);
+			if (e.getSource() == pathErrorJB)
+				pathErrorJD.setVisible(false);
 		}
 	}
 
@@ -99,12 +115,13 @@ public class GUImain_noImgReplaced extends JFrame {
 		insertImgJP.add(imgPathJT);
 		startMatchingJB.addActionListener(new MyActionListener());
 		insertImgJP.add(startMatchingJB);
+		insertImgJP.setBackground(Color.BLACK);
 		pane.add(insertImgJP, BorderLayout.NORTH);
 
-		listJP.add(listJL);
+		listJP.add(listJT);
 		listJP.setBackground(Color.WHITE);
-		listJL.setSelectionMode(0);	//리스트 첫번째 항목 선택
-		pane.add(scrollPaneJS, BorderLayout.CENTER);
+		scrollPaneJS.getHorizontalScrollBar().setValue(scrollPaneJS.getHorizontalScrollBar().getMaximum());	/** */
+		pane.add(listJP);
 		
 		clearJB.addActionListener(new MyActionListener());
 		buttonJP.add(clearJB);
@@ -114,13 +131,14 @@ public class GUImain_noImgReplaced extends JFrame {
 		buttonJP.add(saveJB);
 		loadJB.addActionListener(new MyActionListener());
 		buttonJP.add(loadJB);
+		buttonJP.setBackground(Color.BLACK);
 		pane.add(buttonJP, BorderLayout.SOUTH);
 	}
 
 	void addDialog() {
 
 		progressJD.setTitle("Serching . . .");
-		progressJD.setSize(300, 200);
+		progressJD.setSize(300, 100);
 		progressJD.setVisible(false);
 		progressJD.setLayout(new FlowLayout());
 		// insert JLabel
@@ -130,72 +148,75 @@ public class GUImain_noImgReplaced extends JFrame {
 		cancleProgressJB.addActionListener(new MyActionListener());
 		progressJD.add(cancleProgressJB);
 
-		// 불러오기 실패
 		failLoadJD.setTitle("Error");
-		failLoadJD.setSize(300, 200);
+		failLoadJD.setSize(300, 100);
 		failLoadJD.setVisible(false);
 		failLoadJD.setLayout(new FlowLayout());
 		failLoadJD.add(failLoadJL);
 		failLoadJB.addActionListener(new MyActionListener());
 		failLoadJD.add(failLoadJB);
+
+		errorJD.setTitle("Error");
+		errorJD.setSize(300, 100);
+		errorJD.setVisible(false);
+		errorJD.setLayout(new FlowLayout());
+		errorJD.add(errorJL);
+		errorJB.addActionListener(new MyActionListener());
+		errorJD.add(errorJB);
+
+		pathErrorJD.setTitle("Error");
+		pathErrorJD.setSize(300, 100);
+		pathErrorJD.setVisible(false);
+		pathErrorJD.setLayout(new FlowLayout());
+		pathErrorJD.add(pathErrorJL);
+		pathErrorJB.addActionListener(new MyActionListener());
+		pathErrorJD.add(pathErrorJB);
 	}
 
-	void runImageMatching() {
-		// startMatchingJB 클릭시 실행됨.
-		// 이미지 비교 시작
-		/** 경로 참고 */
-		/** 문제점 : 경로를 어떻게 넣어 주는가, 사진 이름을 바꾸지 않고 어떻게 불러 오는가가 문제.*/
-		int result = ImageMatching.ifCompareFeature(imgPath, path1);
-		
+	void runImageMatching() { // 주력 코드 위치
+		// 이미지 경로 입력받은 것 버튼 누르면 텍스트로 저장해서 변수에 저장
+		// 저장한 변수 ReadDirFileList 로 옮겨서 파일 있는지 확인.
+	}
+
+	void ReadDirFileList(String path) {
 		/**
-		 * 이미지가 같으면 1 반환, 이미지가 다르면 2를 반환한다. */
-		if(result == 1) {
-			// 이미지가 같으면 -> 리스트에 파일 명 올린다.
-			fileName[count] = path1.toString();	/** */
-			count++;	// 다음 배열 위치
-		}
-	}
+		 * 파일 경로에 .jpg .png 이미지 들을 불러서 변수에 파일 경로 또는 이미지 이름을 저장합니다!
+		 */
+		File dirFile = new File(path);
+		File[] fileList = dirFile.listFiles();
 
-	void timeCounter() {
-		// long timeCheck = System.currentTimeMillis(); // - startTime
-		// JLabel 에 timeCheck 값 넣기 // + 밀리초니까 1초당으로 바꿔도 됨
+		String tempFilelistName = fileList.toString(); // 파일 이름 String변환
+		System.out.println("tempFilelistName is >> " + tempFilelistName);
+		
+		for (File tempFile : fileList) {
+			// fileList 에 있는 값들을 하나씩 tempFile과 비교
+			int cnt = 0; // 배열 카운트 변수
+			if (tempFile.isFile()) { // 파일이 존재하면
+				filePath[cnt] = tempFile.getParent();
+				fileName[cnt] = tempFile.getName();
+				if(cnt == 0) System.out.println("Path=" + filePath[cnt]);
+				System.out.println("FileName=" + fileName[cnt]);
+				// 파일 이름이 .jpg 또는 .png로 끝날 경우
+				if ((fileName[cnt].contains(".jpg")) == true || (fileName[cnt].contains(".png")) == true) {
+					System.out.println("truth");
+					insertPath.append(fileName[cnt] + "\n");	// @ (\n) 로 파일 명 구분
+					//insertPath.replace(0, insertPath.length(), fileName[cnt] + "\n"); /** TextArea에 내용 추가 */
+				}
+				cnt++;
+			}
+			/** png 파일 이면 끝에 "@" (또는 "\n") 를 붕이고 txt로 저장 한 후 이걸 다시 쪼갠다. */
+		}
 	}
 
 	void clear() {
-
-	}
-
-	void remove() {
-		/*
-		 * clearJB : 0. listJP 의 내용을 전부 지운다. 
-		 * 1. 비어 있을 경우 비어있다는 경고창 출력
-		 * 1-1. 지우기 전에 한번 물어보는 것도 나쁘지 않을듯. (예 / 아니오)
-		 */
+		insertPath.replace(0, 0, "Clear List");
 	}
 
 	void save() {
-		try {
-			BufferedWriter save = new BufferedWriter(new FileWriter("result_list.txt"));
-			/** */
-			save.write(listJL.getSelectedIndex()); // 선택된 jlist내용 넣기
-			/** */
-			save.close();
-		} catch (Exception e) {
 
-		}
 	}
 
 	void load() {
-		try {
-			File load = new File("result_list.txt");
-			FileReader loadFR = new FileReader(load);
-			BufferedReader loadBR = new BufferedReader(loadFR);
-			String loading = loadBR.readLine();
-			// String str[] = loadBR.split("@");
-
-		} catch (Exception e) {
-			failLoadJD.setVisible(true);
-		}
 
 	}
 
